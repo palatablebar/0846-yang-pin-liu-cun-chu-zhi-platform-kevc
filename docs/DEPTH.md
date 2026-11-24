@@ -15,6 +15,7 @@
 | M5 运行对账 | 核对来源行、采信、隔离、重复与计算条目 | `POST /api/stages/reconcile` | `app/reconcile/ledger.py` | `tests/test_reconcile.py` |
 | M6 批次复核 | 带版本号签发或暂缓，拒绝陈旧复核 | `POST /api/runs/{id}/review` | `app/review/service.py` | `tests/test_review.py` |
 | M7 证据交付 | 仅在签发后输出可校验的复核证据 | `GET /api/runs/{id}/evidence` | `app/evidence/render.py` | `tests/test_evidence.py` |
+| M8 保全补录 | 迟到保全改判并停用受影响签发，原证据冻结可审计 | `POST /api/holds` | `app/review/backfill.py`、`app/review/store.py` | `tests/test_backfill.py` |
 
 ## 输入陷阱
 

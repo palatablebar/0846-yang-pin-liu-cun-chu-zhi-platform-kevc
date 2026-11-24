@@ -75,6 +75,10 @@
 .p0846 .issues li { display: grid; grid-template-columns: 3.5em 1fr auto; gap: 8px; border-bottom: 1px dashed var(--line); padding: 5px 0; }
 .p0846 .issues li.empty { display:block; }
 .p0846 .issues code { color: var(--danger); font-size: 11px; }
+.p0846 #hold-list { max-height: 180px; }
+.p0846 #hold-list li { grid-template-columns: 3.5em 7em auto 1fr; align-items: center; }
+.p0846 #hold-list small { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p0846 #panel-backfill input { width: 100%; }
 .p0846 .chart { min-height: 200px; }
 .p0846 .chart svg { width: 100%; height: 190px; overflow: visible; }
 .p0846 .bars { display: grid; gap: 7px; padding-top: 7px; }

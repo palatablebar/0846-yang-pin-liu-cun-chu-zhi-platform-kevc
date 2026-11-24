@@ -95,10 +95,11 @@
       render(run);
       $('run-status').textContent = run.status + ' · rev ' + run.revision;
       $('revision').textContent = 'rev ' + run.revision;
-      $('sign').disabled = run.summary.REJECT > 0 || state.approved;
-      $('hold').disabled = state.approved;
-      $('download').hidden = !state.approved;
-      if (state.approved) $('download').href = '/api/runs/' + run.run_id + '/evidence';
+      $('sign').disabled = run.summary.REJECT > 0 || state.approved || run.status === 'DEACTIVATED';
+      $('hold').disabled = state.approved || run.status === 'DEACTIVATED';
+      $('download').hidden = !(state.approved || run.status === 'DEACTIVATED');
+      if (state.approved || run.status === 'DEACTIVATED') $('download').href = '/api/runs/' + run.run_id + '/evidence';
+      $('download').textContent = run.status === 'DEACTIVATED' ? '下载原签发证据' : '下载复核证据';
     } catch (error) { setNotice(error.message); }
     finally { $('run').disabled = false; }
   }
@@ -110,14 +111,54 @@
         body: JSON.stringify({decision: decision, comment: $('comment').value, expected_revision: state.run.revision})
       });
       state.run = run;
-      state.approved = run.status === 'APPROVED';
-      $('run-status').textContent = run.status + ' · rev ' + run.revision;
-      $('revision').textContent = 'rev ' + run.revision;
-      $('sign').disabled = true;
-      $('hold').disabled = true;
-      $('download').hidden = !state.approved;
-      if (state.approved) $('download').href = '/api/runs/' + run.run_id + '/evidence';
+      reflectRun(run);
     } catch (error) { setNotice(error.message); }
+  }
+  function reflectRun(run) {
+    state.approved = run.status === 'APPROVED';
+    var deactivated = run.status === 'DEACTIVATED';
+    $('run-status').textContent = run.status + ' · rev ' + run.revision;
+    $('revision').textContent = 'rev ' + run.revision;
+    $('sign').disabled = true;
+    $('hold').disabled = true;
+    $('download').hidden = !(state.approved || deactivated);
+    if (state.approved || deactivated) $('download').href = '/api/runs/' + run.run_id + '/evidence';
+    $('download').textContent = deactivated ? '下载原签发证据' : '下载复核证据';
+    if (deactivated) setNotice('该签发已被补录保全停用，证据仍可下载且摘要保持原样。');
+  }
+  async function loadHolds() {
+    try {
+      var data = await request('/api/holds');
+      $('hold-count').textContent = data.total + ' 条';
+      $('hold-list').innerHTML = data.total ? data.items.map(function (item) {
+        return '<li><span>' + esc(item.sample_id) + '</span><span>' + esc(item.effective_on) +
+          '</span><code>' + (item.active ? '已生效' : '未生效') + '</code><small>' + esc(item.note || '') + '</small></li>';
+      }).join('') : '<li class="empty">暂无补录</li>';
+    } catch (error) { setNotice(error.message); }
+  }
+  async function submitHold() {
+    var sampleId = $('hold-sample').value.trim();
+    var effectiveOn = $('hold-date').value;
+    if (!sampleId || !effectiveOn) { setNotice('请填写样品主键与保全生效日'); return; }
+    try {
+      $('hold-submit').disabled = true;
+      setNotice('');
+      var result = await request('/api/holds', {
+        method: 'POST',
+        body: JSON.stringify({
+          profile: $('profile').value, sample_id: sampleId,
+          effective_on: effectiveOn, note: $('hold-note').value
+        })
+      });
+      setNotice('补录 ' + result.hold.sample_id + '：判定 ' + result.verdict.verdict +
+        '（' + result.verdict.reason + '），停用签发 ' + result.deactivated_count + ' 条');
+      if (state.run) {
+        state.run = await request('/api/runs/' + state.run.run_id);
+        reflectRun(state.run);
+      }
+      await loadHolds();
+    } catch (error) { setNotice(error.message); }
+    finally { $('hold-submit').disabled = false; }
   }
   async function boot() {
     try {
@@ -132,6 +173,8 @@
     $('run').addEventListener('click', runBatch);
     $('sign').addEventListener('click', function () { review('APPROVED'); });
     $('hold').addEventListener('click', function () { review('HELD'); });
+    $('hold-submit').addEventListener('click', submitHold);
+    await loadHolds();
     $('profile').addEventListener('change', function () {
       state.run = null; state.approved = false;
       $('sign').disabled = true; $('hold').disabled = true; $('download').hidden = true;

@@ -13,6 +13,8 @@ def approve(store, run_id, decision, comment, expected_revision):
     row = store.get(run_id)
     if row is None:
         raise DomainIssue("RUN_NOT_FOUND", 404)
+    if row["status"] == "DEACTIVATED":
+        raise DomainIssue("RUN_DEACTIVATED", 409)
     payload = json.loads(row["payload"])
     if decision == "APPROVED" and not approval_allowed(payload):
         raise DomainIssue("GATE_BLOCKED", 409)
@@ -32,4 +34,6 @@ def serialize(row):
     payload = json.loads(row["payload"])
     payload.update(run_id=row["id"], status=row["status"], revision=row["revision"],
                    comment=row["comment"], created_at=row["created_at"])
+    if row.get("frozen_review"):
+        payload["frozen_review"] = json.loads(row["frozen_review"])
     return payload

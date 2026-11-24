@@ -26,13 +26,13 @@ def _stage(name):
     return SPEC["stages"].index(name) + 1
 
 
-def pipeline(profile="dirty", path=None, upto="证据交付"):
+def pipeline(profile="dirty", path=None, upto="证据交付", hold_overrides=None):
     intake = load(profile, path)
     prepared, prepare_issues = [], []
     results = []
     ledger = None
     if _stage(upto) >= 2:
-        prepared, prepare_issues = prepare_rows(intake["rows"])
+        prepared, prepare_issues = prepare_rows(intake["rows"], hold_overrides=hold_overrides)
     if _stage(upto) >= 3:
         results = calculate_rows(prepared)
     if _stage(upto) >= 4:

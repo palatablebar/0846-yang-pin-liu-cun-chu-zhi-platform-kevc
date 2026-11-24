@@ -39,6 +39,22 @@
         </div>
       </div>
     </article>
+    <article class="panel" id="panel-backfill">
+      <div class="panel-head"><h2>迟到保全补录</h2><span class="hint" id="hold-count">0 条</span></div>
+      <div class="review">
+        <p class="hint">补录在原判定日（2026-11-24）前已生效的保全；改判“待处置→留存”时，受影响签发立即停用。</p>
+        <label for="hold-sample">样品主键</label>
+        <input id="hold-sample" type="text" placeholder="如 S2">
+        <label for="hold-date">保全生效日</label>
+        <input id="hold-date" type="date" max="2026-11-24">
+        <label for="hold-note">补录说明</label>
+        <input id="hold-note" type="text" placeholder="如 法院保全裁定">
+        <div class="review-actions">
+          <button id="hold-submit" type="button">补录保全</button>
+        </div>
+        <ul class="issues" id="hold-list"><li class="empty">暂无补录</li></ul>
+      </div>
+    </article>
   </section>
 </main>
 {% endblock %}

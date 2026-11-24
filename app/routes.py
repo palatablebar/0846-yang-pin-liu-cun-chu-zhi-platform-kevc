@@ -4,6 +4,11 @@ from app.catalog import SPEC
 from app.config import SAMPLES
 from app.errors import DomainIssue
 from app.evidence.render import render
+from app.review.backfill import (
+    backfill_hold,
+    pipeline_with_holds,
+    serialize_hold,
+)
 from app.review.service import approve, create_run, serialize
 from app.service import pipeline
 
@@ -42,7 +47,7 @@ def stage(stage_id):
 def create():
     data = request.get_json(silent=True) or {}
     profile = data.get("profile", "dirty")
-    payload = pipeline(profile)
+    payload = pipeline_with_holds(store(), profile)
     return jsonify(create_run(store(), payload))
 
 
@@ -66,6 +71,31 @@ def review(run_id):
 def evidence(run_id):
     run = serialize(store().get(run_id))
     return jsonify(render(run))
+
+
+@api.get("/api/holds")
+def list_holds():
+    rows = store().list_holds()
+    return jsonify(items=[serialize_hold(row) for row in rows], total=len(rows))
+
+
+@api.post("/api/holds")
+def add_hold():
+    data = request.get_json(silent=True) or {}
+    if "sample_id" not in data or "effective_on" not in data:
+        raise DomainIssue("BAD_REQUEST")
+    profile = data.get("profile", "clean")
+    if profile not in {"clean", "dirty"}:
+        raise DomainIssue("SAMPLE_UNKNOWN", 404)
+    result = backfill_hold(store(), profile, data["sample_id"], data["effective_on"],
+                           data.get("note", ""))
+    return jsonify(result)
+
+
+@api.get("/api/deactivations")
+def list_deactivations():
+    items = store().list_deactivations()
+    return jsonify(items=items, total=len(items))
 
 
 @api.get("/api/examples/<profile>")

@@ -18,6 +18,8 @@ MESSAGES = {
     "GATE_BLOCKED": "存在阻断项，不能签发",
     "NOT_APPROVED": "批次尚未签发",
     "BAD_REQUEST": "请求内容不完整",
+    "HOLD_NOT_EFFECTIVE": "保全生效日晚于原判定日，不能改判既有结论",
+    "RUN_DEACTIVATED": "签发已被补录保全停用",
 }
 
 
